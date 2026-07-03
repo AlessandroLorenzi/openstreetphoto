@@ -14,6 +14,7 @@ GEOJSON = {"type": "FeatureCollection", "features": []}
 def server_url(tmp_path):
     geojson = tmp_path / "photo-nodes.geojson"
     geojson.write_text(json.dumps(GEOJSON))
+    (tmp_path / "photo-nodes-italia.geojson").write_text(json.dumps(GEOJSON))
     server = make_server(geojson, 0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -26,6 +27,38 @@ def test_root_serves_html(server_url):
     assert resp.status_code == 200
     assert "text/html" in resp.headers["Content-Type"]
     assert "leaflet" in resp.text.lower()
+
+
+def test_root_with_query_string(server_url):
+    # la pagina Italia e' /?data=italia: la query non deve rompere il routing
+    resp = requests.get(f"{server_url}/?data=italia")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["Content-Type"]
+
+
+def test_italy_html_route(server_url):
+    resp = requests.get(f"{server_url}/italy.html")
+    assert resp.status_code == 200
+    assert "data=italia" in resp.text
+
+
+def test_italia_geojson_route(server_url):
+    resp = requests.get(f"{server_url}/photo-nodes-italia.geojson")
+    assert resp.status_code == 200
+    assert resp.json()["type"] == "FeatureCollection"
+
+
+def test_italia_geojson_missing_404(tmp_path):
+    geojson = tmp_path / "photo-nodes.geojson"
+    geojson.write_text(json.dumps(GEOJSON))
+    server = make_server(geojson, 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        assert requests.get(f"{url}/photo-nodes-italia.geojson").status_code == 404
+    finally:
+        server.shutdown()
 
 
 def test_geojson_route(server_url):

@@ -126,6 +126,15 @@
 <script>
   "use strict";
 
+  // dataset scelto via ?data=<chiave> (italy.html reindirizza a ?data=italia)
+  const DATASETS = {
+    lombardia: { file: "photo-nodes.geojson", view: [45.6, 9.8], zoom: 8, title: "foto della Lombardia" },
+    italia: { file: "photo-nodes-italia.geojson", view: [42.5, 12.5], zoom: 6, title: "foto d'Italia" },
+  };
+  const dataset =
+    DATASETS[new URLSearchParams(location.search).get("data")] || DATASETS.lombardia;
+  document.title = "openstreetphoto — " + dataset.title;
+
   // molti tag image= non sono URL diretti di immagini: pagine File: di Commons o
   // delle Wikipedia, valori nudi File:..., vecchi thumbnail che oggi rispondono 400.
   // parseWikiImage riconosce questi casi e ritorna host e filename (URL-encoded).
@@ -306,7 +315,7 @@
   const initialHash = parseHash();
   const map = initialHash.map
     ? L.map("map").setView([initialHash.map.lat, initialHash.map.lon], initialHash.map.zoom)
-    : L.map("map").setView([45.6, 9.8], 8);
+    : L.map("map").setView(dataset.view, dataset.zoom);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -334,7 +343,7 @@
 
   const EMBEDDABLE = ["image", "wikimedia_commons", "panoramax"];
 
-  fetch("photo-nodes.geojson")  // relativo: funziona sia su osp-serve sia su GitHub Pages (/repo/)
+  fetch(dataset.file)  // relativo: funziona sia su osp-serve sia su GitHub Pages (/repo/)
     .then((r) => r.json())
     .then((doc) => {
       const feats = doc.features.filter((f) =>

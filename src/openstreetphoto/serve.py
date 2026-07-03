@@ -7,17 +7,23 @@ from importlib import resources
 from pathlib import Path
 
 
-def _index_html() -> bytes:
-    return (resources.files("openstreetphoto") / "web" / "index.html").read_bytes()
+def _web_file(name: str) -> bytes:
+    return (resources.files("openstreetphoto") / "web" / name).read_bytes()
 
 
 def make_server(geojson: Path, port: int) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            if self.path in ("/", "/index.html"):
-                self._send(200, "text/html; charset=utf-8", _index_html())
-            elif self.path == "/photo-nodes.geojson":
+            path = self.path.split("?", 1)[0]  # /?data=italia deve matchare /
+            italia = geojson.with_name("photo-nodes-italia.geojson")
+            if path in ("/", "/index.html"):
+                self._send(200, "text/html; charset=utf-8", _web_file("index.html"))
+            elif path == "/italy.html":
+                self._send(200, "text/html; charset=utf-8", _web_file("italy.html"))
+            elif path == "/photo-nodes.geojson":
                 self._send(200, "application/geo+json", geojson.read_bytes())
+            elif path == "/photo-nodes-italia.geojson" and italia.exists():
+                self._send(200, "application/geo+json", italia.read_bytes())
             else:
                 self._send(404, "text/plain; charset=utf-8", b"not found")
 
