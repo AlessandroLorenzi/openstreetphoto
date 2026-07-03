@@ -1,2 +1,217 @@
-<!doctype html><html><head><title>openstreetphoto</title></head>
-<body>leaflet placeholder</body></html>
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>openstreetphoto — foto della Lombardia</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FBFAF7;
+    --ink: #23272C;
+    --ink-soft: #4A5058;
+    --ochre: #C2410C;
+    --matte: #FFFFFF;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { height: 100%; }
+  body { font-family: "IBM Plex Mono", monospace; background: var(--paper); color: var(--ink); }
+
+  /* contafotogrammi */
+  #counter {
+    position: fixed; top: 12px; right: 12px; z-index: 1000;
+    background: var(--ink); color: var(--paper);
+    font: 500 13px/1 "IBM Plex Mono", monospace;
+    letter-spacing: 0.08em;
+    padding: 8px 12px; border-radius: 2px;
+  }
+  #counter b { color: #F0B27A; font-weight: 500; }
+
+  /* cluster monocromi: cerchio inchiostro, numero bianco */
+  .osp-cluster {
+    background: var(--ink); color: var(--paper);
+    border: 2px solid var(--paper);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font: 500 12px "IBM Plex Mono", monospace;
+    box-shadow: 0 1px 4px rgba(35,39,44,.4);
+  }
+
+  /* modale-stampa */
+  #overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(35,39,44,.72);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #overlay.open { display: flex; }
+  #print {
+    background: var(--matte);
+    padding: 14px 14px 0;
+    max-width: min(760px, 94vw); max-height: 92vh;
+    box-shadow: 0 12px 40px rgba(0,0,0,.45);
+    display: flex; flex-direction: column;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #overlay.open #print { animation: develop .18s ease-out; }
+    @keyframes develop { from { opacity: 0; transform: scale(.97); } }
+  }
+  #photo-box {
+    min-height: 200px; max-height: calc(92vh - 120px);
+    display: flex; align-items: center; justify-content: center;
+    background: #EFEDE8;
+  }
+  #photo-box img { max-width: 100%; max-height: calc(92vh - 120px); display: block; }
+  #photo-error {
+    padding: 48px 32px; color: var(--ink-soft);
+    font-size: 13px; text-align: center;
+  }
+  #caption {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; padding: 12px 2px 14px;
+  }
+  #caption h2 {
+    font: italic 500 21px/1.2 "Fraunces", serif;
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #caption .meta {
+    font: 400 12px "IBM Plex Mono", monospace;
+    color: var(--ink-soft); white-space: nowrap;
+  }
+  #caption a { color: var(--ochre); text-decoration: none; }
+  #caption a:hover, #caption a:focus-visible { text-decoration: underline; }
+  #close {
+    position: absolute; top: 14px; right: 18px;
+    background: var(--paper); color: var(--ink);
+    border: none; font: 500 16px/1 "IBM Plex Mono", monospace;
+    width: 34px; height: 34px; border-radius: 2px; cursor: pointer;
+  }
+  :focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="counter">caricamento…</div>
+<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="print-title">
+  <button id="close" aria-label="Chiudi">✕</button>
+  <figure id="print">
+    <div id="photo-box"></div>
+    <figcaption id="caption">
+      <h2 id="print-title"></h2>
+      <span class="meta"><span id="source"></span> · <a id="osm-link" target="_blank" rel="noopener">vedi su OSM →</a></span>
+    </figcaption>
+  </figure>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  "use strict";
+
+  // ordine di priorità delle sorgenti embeddabili
+  function photoUrl(props) {
+    const tags = props.tags;
+    if (props.photo_keys.includes("image")) {
+      return { url: tags.image, source: "image" };
+    }
+    if (props.photo_keys.includes("wikimedia_commons")) {
+      const name = tags.wikimedia_commons.replace(/^File:/, "");
+      return {
+        url: "https://commons.wikimedia.org/wiki/Special:FilePath/" +
+             encodeURIComponent(name) + "?width=1024",
+        source: "wikimedia commons",
+      };
+    }
+    if (props.photo_keys.includes("panoramax")) {
+      return {
+        url: "https://api.panoramax.xyz/api/pictures/" + tags.panoramax + "/sd.jpg",
+        source: "panoramax",
+      };
+    }
+    return null;
+  }
+
+  const overlay = document.getElementById("overlay");
+  const photoBox = document.getElementById("photo-box");
+  const title = document.getElementById("print-title");
+  const source = document.getElementById("source");
+  const osmLink = document.getElementById("osm-link");
+  const closeBtn = document.getElementById("close");
+
+  function openModal(props) {
+    const photo = photoUrl(props);
+    if (!photo) return;
+    title.textContent = props.tags.name || "Nodo " + props.osm_id;
+    source.textContent = photo.source;
+    osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
+    photoBox.innerHTML = "";
+    const img = document.createElement("img");
+    img.alt = title.textContent;
+    img.onerror = () => {
+      photoBox.innerHTML = '<p id="photo-error">La foto non si carica dalla sorgente originale.<br>Il link OSM qui sotto resta valido.</p>';
+    };
+    img.src = photo.url;
+    photoBox.appendChild(img);
+    overlay.classList.add("open");
+    closeBtn.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove("open");
+    photoBox.innerHTML = "";
+  }
+  closeBtn.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  const map = L.map("map").setView([45.6, 9.8], 8);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+
+  const clusters = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    maxClusterRadius: 46,
+    iconCreateFunction: (cluster) => {
+      const n = cluster.getChildCount();
+      const size = n < 10 ? 30 : n < 100 ? 38 : 46;
+      return L.divIcon({
+        html: '<div class="osp-cluster" style="width:' + size + "px;height:" + size + 'px">' + n + "</div>",
+        className: "",
+        iconSize: [size, size],
+      });
+    },
+  });
+
+  const EMBEDDABLE = ["image", "wikimedia_commons", "panoramax"];
+
+  fetch("/photo-nodes.geojson")
+    .then((r) => r.json())
+    .then((doc) => {
+      const feats = doc.features.filter((f) =>
+        f.properties.photo_keys.some((k) => EMBEDDABLE.includes(k))
+      );
+      for (const f of feats) {
+        const [lon, lat] = f.geometry.coordinates;
+        const marker = L.circleMarker([lat, lon], {
+          radius: 6, weight: 2,
+          color: "#C2410C", fillColor: "#FBFAF7", fillOpacity: 0.9,
+        });
+        marker.on("click", () => openModal(f.properties));
+        clusters.addLayer(marker);
+      }
+      map.addLayer(clusters);
+      document.getElementById("counter").innerHTML =
+        "<b>" + feats.length.toLocaleString("it-IT") + "</b> foto";
+    })
+    .catch(() => {
+      document.getElementById("counter").textContent = "errore nel caricare i punti";
+    });
+</script>
+</body>
+</html>
