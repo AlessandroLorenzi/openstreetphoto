@@ -190,12 +190,15 @@
     return null;
   }
 
-  // titolo di fallback dal tag tipo del nodo, valore raw (es. "drinking_water").
+  // titolo di fallback dal tag tipo del nodo (es. "drinking_water" -> "Drinking water").
   // La lista sta dentro la funzione: l'harness dei test estrae una funzione sola.
   function typeTitle(tags) {
     for (const key of ["amenity", "shop", "tourism", "historic", "leisure", "man_made"]) {
       const value = tags[key];
-      if (value && value !== "yes") return value;
+      if (value && value !== "yes") {
+        const label = value.replace(/_/g, " ");
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      }
     }
     return null;
   }

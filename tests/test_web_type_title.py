@@ -13,16 +13,16 @@ def type_title(tags: dict) -> str | None:
 @pytest.mark.parametrize(
     ("tags", "expected"),
     [
-        # il caso della richiesta: amenity raw
-        ({"amenity": "drinking_water"}, "drinking_water"),
+        # il caso della richiesta: underscore -> spazi, prima lettera maiuscola
+        ({"amenity": "drinking_water"}, "Drinking water"),
         # priorita': amenity vince su tourism
-        ({"amenity": "fountain", "tourism": "artwork"}, "fountain"),
+        ({"amenity": "fountain", "tourism": "artwork"}, "Fountain"),
         # tag successivi nella catena
-        ({"tourism": "artwork"}, "artwork"),
-        ({"historic": "wayside_cross"}, "wayside_cross"),
-        ({"man_made": "water_tap"}, "water_tap"),
+        ({"tourism": "artwork"}, "Artwork"),
+        ({"historic": "wayside_cross"}, "Wayside cross"),
+        ({"man_made": "water_tap"}, "Water tap"),
         # "yes" scartato con fallback al tag successivo
-        ({"shop": "yes", "tourism": "artwork"}, "artwork"),
+        ({"shop": "yes", "tourism": "artwork"}, "Artwork"),
         # solo "yes": nessun titolo
         ({"man_made": "yes"}, None),
         # nessun tag tipo
