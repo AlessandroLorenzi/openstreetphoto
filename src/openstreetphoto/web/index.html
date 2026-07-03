@@ -182,29 +182,62 @@
     photoBox.appendChild(img);
   }
 
-  function openModal(props) {
+  function parseHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const out = {};
+    if (params.get("node")) out.node = parseInt(params.get("node"), 10);
+    const m = (params.get("map") || "").match(/^([\d.]+)\/(-?[\d.]+)\/(-?[\d.]+)$/);
+    if (m) out.map = { zoom: +m[1], lat: +m[2], lon: +m[3] };
+    return out;
+  }
+
+  function writeHash(nodeId, lat, lon) {
+    const pos = map.getZoom() + "/" + lat.toFixed(6) + "/" + lon.toFixed(6);
+    history.replaceState(null, "", nodeId ? "#node=" + nodeId + "&map=" + pos : "#map=" + pos);
+  }
+
+  let currentNodeId = null;  // nodo della modale aperta, riportato nell'hash a ogni moveend
+
+  function openModal(feature) {
+    const props = feature.properties;
     const candidates = photoCandidates(props);
     if (!candidates.length) return;
+    currentNodeId = props.osm_id;
     title.textContent = props.tags.name || "Nodo " + props.osm_id;
     osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
     showCandidate(candidates, 0);
     overlay.classList.add("open");
     closeBtn.focus();
+    const [lon, lat] = feature.geometry.coordinates;
+    writeHash(props.osm_id, lat, lon);
   }
 
   function closeModal() {
+    if (!overlay.classList.contains("open")) return;
     overlay.classList.remove("open");
     photoBox.innerHTML = "";
+    currentNodeId = null;
+    const c = map.getCenter();
+    writeHash(null, c.lat, c.lng);
   }
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
-  const map = L.map("map").setView([45.6, 9.8], 8);
+  const initialHash = parseHash();
+  const map = initialHash.map
+    ? L.map("map").setView([initialHash.map.lat, initialHash.map.lon], initialHash.map.zoom)
+    : L.map("map").setView([45.6, 9.8], 8);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+
+  // ogni spostamento aggiorna map= nell'hash (e conserva node= se la modale è aperta)
+  map.on("moveend", () => {
+    const c = map.getCenter();
+    writeHash(currentNodeId, c.lat, c.lng);
+  });
 
   const clusters = L.markerClusterGroup({
     showCoverageOnHover: false,
@@ -228,18 +261,29 @@
       const feats = doc.features.filter((f) =>
         f.properties.photo_keys.some((k) => EMBEDDABLE.includes(k))
       );
+      const byId = new Map();
       for (const f of feats) {
+        byId.set(f.properties.osm_id, f);
         const [lon, lat] = f.geometry.coordinates;
         const marker = L.circleMarker([lat, lon], {
           radius: 6, weight: 2,
           color: "#C2410C", fillColor: "#FBFAF7", fillOpacity: 0.9,
         });
-        marker.on("click", () => openModal(f.properties));
+        marker.on("click", () => openModal(f));
         clusters.addLayer(marker);
       }
       map.addLayer(clusters);
       document.getElementById("counter").innerHTML =
         "<b>" + feats.length.toLocaleString("it-IT") + "</b> foto";
+      // permalink: #node=… riapre la modale sul nodo
+      if (initialHash.node && byId.has(initialHash.node)) {
+        const f = byId.get(initialHash.node);
+        if (!initialHash.map) {
+          const [lon, lat] = f.geometry.coordinates;
+          map.setView([lat, lon], 18);
+        }
+        openModal(f);
+      }
     })
     .catch(() => {
       document.getElementById("counter").textContent = "errore nel caricare i punti";
