@@ -18,8 +18,10 @@ mostrato da nessuna parte.
 1. `tags.name` (come oggi);
 2. **nuovo** `typeTitle(tags)`: il valore del primo tag presente tra
    `amenity`, `shop`, `tourism`, `historic`, `leisure`, `man_made`, in
-   quest'ordine, mostrato raw (es. `drinking_water`, `wayside_cross`);
-   il valore `yes` viene ignorato e si passa al tag successivo;
+   quest'ordine, in formato leggibile — underscore → spazi, prima lettera
+   maiuscola (es. `drinking_water` → "Drinking water"); il valore `yes`
+   viene ignorato e si passa al tag successivo (richiesta successiva:
+   inizialmente il valore era mostrato raw);
 3. `photoTitle(tags)` (filename della foto, invariato);
 4. `"Nodo " + osm_id` (come oggi).
 
