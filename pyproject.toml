@@ -7,7 +7,7 @@ name = "openstreetphoto"
 version = "0.1.0"
 description = "Downloader dell'estratto OpenStreetMap della Lombardia"
 requires-python = ">=3.11"
-dependencies = ["requests", "tqdm"]
+dependencies = ["requests", "tqdm", "osmium"]
 
 [project.optional-dependencies]
 test = ["pytest", "responses"]
