@@ -119,3 +119,29 @@ def test_download_http_error_keeps_existing_file(tmp_path):
     with pytest.raises(requests.HTTPError):
         download(URL, tmp_path, force=True, progress=False)
     assert dest.read_bytes() == b"good"
+
+
+@responses.activate
+def test_download_resumes_partial_with_206(tmp_path):
+    _mock_head()
+    part = tmp_path / "lombardia-latest.osm.pbf.part"
+    part.write_bytes(BODY[:400])
+    responses.get(
+        URL,
+        body=BODY[400:],
+        status=206,
+        match=[responses.matchers.header_matcher({"Range": "bytes=400-"})],
+    )
+    dest = download(URL, tmp_path, progress=False)
+    assert dest.read_bytes() == BODY
+    assert not part.exists()
+
+
+@responses.activate
+def test_download_restarts_when_server_ignores_range(tmp_path):
+    _mock_head()
+    part = tmp_path / "lombardia-latest.osm.pbf.part"
+    part.write_bytes(b"stale")
+    responses.get(URL, body=BODY, status=200)
+    dest = download(URL, tmp_path, progress=False)
+    assert dest.read_bytes() == BODY

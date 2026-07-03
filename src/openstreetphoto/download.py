@@ -63,10 +63,16 @@ def download(
         return dest
 
     part = dest.with_name(dest.name + ".part")
-    resp = session.get(url, stream=True, timeout=30)
+    offset = part.stat().st_size if part.exists() else 0
+    headers = {"Range": f"bytes={offset}-"} if offset else {}
+    resp = session.get(url, headers=headers, stream=True, timeout=30)
     resp.raise_for_status()
-    with open(part, "wb") as fh, tqdm(
+    if offset and resp.status_code != 206:
+        offset = 0  # il server ha ignorato Range: si riparte da zero
+    mode = "ab" if offset else "wb"
+    with open(part, mode) as fh, tqdm(
         total=remote.content_length,
+        initial=offset,
         unit="B",
         unit_scale=True,
         desc=dest.name,
