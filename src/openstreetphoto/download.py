@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -93,3 +95,24 @@ def download(
         )
     )
     return dest
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Scarica un estratto OpenStreetMap (default: Lombardia)"
+    )
+    parser.add_argument("--url", default=DEFAULT_URL, help="URL dell'estratto .osm.pbf")
+    parser.add_argument(
+        "--dest", type=Path, default=Path("data"), help="directory di destinazione"
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="scarica anche se già aggiornato"
+    )
+    args = parser.parse_args(argv)
+    try:
+        dest = download(args.url, args.dest, force=args.force)
+    except requests.RequestException as exc:
+        print(f"errore di download: {exc}", file=sys.stderr)
+        return 1
+    print(dest)
+    return 0

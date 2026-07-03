@@ -9,6 +9,7 @@ from openstreetphoto.download import (
     RemoteInfo,
     download,
     fetch_remote_info,
+    main,
     is_up_to_date,
     meta_path_for,
 )
@@ -145,3 +146,20 @@ def test_download_restarts_when_server_ignores_range(tmp_path):
     responses.get(URL, body=BODY, status=200)
     dest = download(URL, tmp_path, progress=False)
     assert dest.read_bytes() == BODY
+
+
+@responses.activate
+def test_main_downloads_to_dest(tmp_path, capsys):
+    _mock_head()
+    responses.get(URL, body=BODY)
+    rc = main(["--url", URL, "--dest", str(tmp_path)])
+    assert rc == 0
+    assert (tmp_path / "lombardia-latest.osm.pbf").read_bytes() == BODY
+
+
+@responses.activate
+def test_main_network_error_returns_1(tmp_path, capsys):
+    responses.head(URL, body=requests.ConnectionError("rete giù"))
+    rc = main(["--url", URL, "--dest", str(tmp_path)])
+    assert rc == 1
+    assert "errore" in capsys.readouterr().err.lower()
