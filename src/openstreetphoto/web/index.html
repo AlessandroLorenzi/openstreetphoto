@@ -211,7 +211,7 @@
 
   const EMBEDDABLE = ["image", "wikimedia_commons", "panoramax"];
 
-  fetch("/photo-nodes.geojson")
+  fetch("photo-nodes.geojson")  // relativo: funziona sia su osp-serve sia su GitHub Pages (/repo/)
     .then((r) => r.json())
     .then((doc) => {
       const feats = doc.features.filter((f) =>
