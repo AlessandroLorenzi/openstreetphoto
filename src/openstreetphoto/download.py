@@ -114,5 +114,8 @@ def main(argv: list[str] | None = None) -> int:
     except requests.RequestException as exc:
         print(f"errore di download: {exc}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print("interrotto: il download riprenderà dal punto raggiunto", file=sys.stderr)
+        return 130
     print(dest)
     return 0

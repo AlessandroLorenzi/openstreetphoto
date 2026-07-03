@@ -163,3 +163,15 @@ def test_main_network_error_returns_1(tmp_path, capsys):
     rc = main(["--url", URL, "--dest", str(tmp_path)])
     assert rc == 1
     assert "errore" in capsys.readouterr().err.lower()
+
+
+def test_main_keyboard_interrupt_no_traceback(tmp_path, capsys, monkeypatch):
+    import openstreetphoto.download as dl
+
+    def _interrupt(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(dl, "download", _interrupt)
+    rc = main(["--url", URL, "--dest", str(tmp_path)])
+    assert rc == 130
+    assert "interrotto" in capsys.readouterr().err.lower()
