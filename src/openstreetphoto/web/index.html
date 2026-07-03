@@ -178,6 +178,16 @@
     return null;
   }
 
+  // titolo di fallback dal tag tipo del nodo, valore raw (es. "drinking_water").
+  // La lista sta dentro la funzione: l'harness dei test estrae una funzione sola.
+  function typeTitle(tags) {
+    for (const key of ["amenity", "shop", "tourism", "historic", "leisure", "man_made"]) {
+      const value = tags[key];
+      if (value && value !== "yes") return value;
+    }
+    return null;
+  }
+
   // tutte le sorgenti embeddabili del nodo, in ordine di priorità
   function photoCandidates(props) {
     const tags = props.tags;
@@ -252,7 +262,8 @@
     if (!candidates.length) return;
     currentNodeId = props.osm_id;
     title.textContent =
-      props.tags.name || photoTitle(props.tags) || "Nodo " + props.osm_id;
+      props.tags.name || typeTitle(props.tags) || photoTitle(props.tags) ||
+      "Nodo " + props.osm_id;
     osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
     showCandidate(candidates, 0);
     overlay.classList.add("open");
