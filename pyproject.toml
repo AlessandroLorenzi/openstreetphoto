@@ -15,6 +15,7 @@ test = ["pytest", "responses"]
 [project.scripts]
 osp-download = "openstreetphoto.download:main"
 osp-extract = "openstreetphoto.extract:main"
+osp-serve = "openstreetphoto.serve:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
