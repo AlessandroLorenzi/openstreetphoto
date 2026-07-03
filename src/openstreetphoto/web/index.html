@@ -109,7 +109,7 @@
 <body>
 <div id="map"></div>
 <div id="counter">caricamento…</div>
-<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="print-title">
+<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="print-title" aria-describedby="print-description">
   <figure id="print">
     <button id="close" aria-label="Chiudi">✕</button>
     <div id="photo-box"></div>
@@ -280,8 +280,9 @@
     title.textContent =
       props.tags.name || typeTitle(props.tags) || photoTitle(props.tags) ||
       "Nodo " + props.osm_id;
-    description.textContent = props.tags.description || "";
-    description.hidden = !props.tags.description;
+    const descText = (props.tags.description || "").trim();
+    description.textContent = descText;
+    description.hidden = !descText;
     osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
     showCandidate(candidates, 0);
     overlay.classList.add("open");

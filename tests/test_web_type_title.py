@@ -21,6 +21,7 @@ def type_title(tags: dict) -> str | None:
         ({"tourism": "artwork"}, "Artwork"),
         ({"historic": "wayside_cross"}, "Wayside cross"),
         ({"man_made": "water_tap"}, "Water tap"),
+        ({"leisure": "playground"}, "Playground"),
         # "yes" scartato con fallback al tag successivo
         ({"shop": "yes", "tourism": "artwork"}, "Artwork"),
         # solo "yes": nessun titolo
