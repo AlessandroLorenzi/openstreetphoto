@@ -20,13 +20,22 @@ def extract_function(source: str, name: str) -> str:
     raise ValueError(f"funzione {name} non trovata")
 
 
-def normalize(url: str) -> str:
-    fn = extract_function(HTML.read_text(), "normalizeImageUrl")
-    script = f"{fn}\nconsole.log(normalizeImageUrl({json.dumps(url)}));"
+def run_js(expr: str, *functions: str) -> str:
+    source = HTML.read_text()
+    script = "\n".join(extract_function(source, f) for f in functions)
+    script += f"\nconsole.log({expr});"
     out = subprocess.run(
         ["node", "-e", script], capture_output=True, text=True, check=True
     )
     return out.stdout.strip()
+
+
+def normalize(url: str) -> str:
+    return run_js(
+        f"normalizeImageUrl({json.dumps(url)})",
+        "parseWikiImage",
+        "normalizeImageUrl",
+    )
 
 
 @pytest.mark.parametrize(

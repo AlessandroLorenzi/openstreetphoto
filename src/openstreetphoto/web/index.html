@@ -116,25 +116,34 @@
 
   // molti tag image= non sono URL diretti di immagini: pagine File: di Commons o
   // delle Wikipedia, valori nudi File:..., vecchi thumbnail che oggi rispondono 400.
-  // Tutti riscritti su Special:FilePath, che risolve sempre il file corrente.
-  function normalizeImageUrl(url) {
+  // parseWikiImage riconosce questi casi e ritorna host e filename (URL-encoded).
+  function parseWikiImage(url) {
     const filePage = url.match(
       /^(https?:\/\/[a-z-]+\.(?:m\.)?(?:wikimedia|wikipedia)\.org)\/wiki\/File:(.+)$/
     );
     if (filePage) {
-      return filePage[1] + "/wiki/Special:FilePath/" + filePage[2] + "?width=1024";
+      return { host: filePage[1], name: filePage[2] };
     }
     if (url.startsWith("File:")) {
-      return "https://commons.wikimedia.org/wiki/Special:FilePath/" +
-             encodeURIComponent(url.slice(5)) + "?width=1024";
+      return {
+        host: "https://commons.wikimedia.org",
+        name: encodeURIComponent(url.slice(5)),
+      };
     }
     const thumb = url.match(
       /^https?:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\/\w\/\w\w\/([^/]+)\//
     );
     if (thumb) {
-      return "https://commons.wikimedia.org/wiki/Special:FilePath/" + thumb[1] + "?width=1024";
+      return { host: "https://commons.wikimedia.org", name: thumb[1] };
     }
-    return url;
+    return null;
+  }
+
+  // riscrive su Special:FilePath, che risolve sempre il file corrente
+  function normalizeImageUrl(url) {
+    const wiki = parseWikiImage(url);
+    if (!wiki) return url;
+    return wiki.host + "/wiki/Special:FilePath/" + wiki.name + "?width=1024";
   }
 
   // tutte le sorgenti embeddabili del nodo, in ordine di priorità
