@@ -104,7 +104,7 @@
     <div id="photo-box"></div>
     <figcaption id="caption">
       <h2 id="print-title"></h2>
-      <span class="meta"><span id="source"></span> · <a id="osm-link" target="_blank" rel="noopener">vedi su OSM →</a></span>
+      <span class="meta"><a id="source" target="_blank" rel="noopener"></a> · <a id="osm-link" target="_blank" rel="noopener">vedi su OSM →</a></span>
     </figcaption>
   </figure>
 </div>
@@ -142,7 +142,11 @@
     const tags = props.tags;
     const candidates = [];
     if (props.photo_keys.includes("image")) {
-      candidates.push({ url: normalizeImageUrl(tags.image), source: "image" });
+      candidates.push({
+        url: normalizeImageUrl(tags.image),
+        source: "image",
+        page: tags.image,  // pagina/URL originale del tag, non la versione riscritta
+      });
     }
     if (props.photo_keys.includes("wikimedia_commons")) {
       const name = tags.wikimedia_commons.replace(/^File:/, "");
@@ -150,12 +154,14 @@
         url: "https://commons.wikimedia.org/wiki/Special:FilePath/" +
              encodeURIComponent(name) + "?width=1024",
         source: "wikimedia commons",
+        page: "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(name),
       });
     }
     if (props.photo_keys.includes("panoramax")) {
       candidates.push({
         url: "https://api.panoramax.xyz/api/pictures/" + tags.panoramax + "/sd.jpg",
         source: "panoramax",
+        page: "https://api.panoramax.xyz/#focus=pic&pic=" + tags.panoramax,
       });
     }
     return candidates;
@@ -174,6 +180,7 @@
       return;
     }
     source.textContent = candidates[i].source;
+    source.href = candidates[i].page;
     photoBox.innerHTML = "";
     const img = document.createElement("img");
     img.alt = title.textContent;
