@@ -22,17 +22,18 @@ def photo_keys(tags: dict[str, str]) -> list[str]:
     return keys
 
 
-class _PhotoNodeHandler(osmium.SimpleHandler):
-    def __init__(self) -> None:
-        super().__init__()
-        self.features: list[dict] = []
-
-    def node(self, n: osmium.osm.Node) -> None:
+def extract_features(pbf: Path) -> list[dict]:
+    # KeyFilter scarta in C++ i nodi senza tag foto: in Python arrivano solo i match
+    processor = osmium.FileProcessor(str(pbf), osmium.osm.NODE).with_filter(
+        osmium.filter.KeyFilter(*PHOTO_TAGS)
+    )
+    features = []
+    for n in processor:
         tags = {tag.k: tag.v for tag in n.tags}
         keys = photo_keys(tags)
-        if not keys:
-            return
-        self.features.append(
+        if not keys:  # es. wikimedia_commons=Category:* passa il KeyFilter ma non è una foto
+            continue
+        features.append(
             {
                 "type": "Feature",
                 "geometry": {
@@ -42,12 +43,7 @@ class _PhotoNodeHandler(osmium.SimpleHandler):
                 "properties": {"osm_id": n.id, "photo_keys": keys, "tags": tags},
             }
         )
-
-
-def extract_features(pbf: Path) -> list[dict]:
-    handler = _PhotoNodeHandler()
-    handler.apply_file(str(pbf))
-    return handler.features
+    return features
 
 
 def main(argv: list[str] | None = None) -> int:
