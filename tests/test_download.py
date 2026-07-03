@@ -1,16 +1,27 @@
 import json
 from pathlib import Path
 
+import pytest
+import requests
 import responses
 
 from openstreetphoto.download import (
     RemoteInfo,
+    download,
     fetch_remote_info,
     is_up_to_date,
     meta_path_for,
 )
 
 URL = "http://example.org/lombardia-latest.osm.pbf"
+BODY = b"x" * 1000
+
+
+def _mock_head(last_modified="Fri, 03 Jul 2026 01:40:35 GMT", length=len(BODY)):
+    responses.head(
+        URL,
+        headers={"Last-Modified": last_modified, "Content-Length": str(length)},
+    )
 
 
 @responses.activate
@@ -61,3 +72,50 @@ def test_not_up_to_date_when_meta_missing(tmp_path):
     dest.write_bytes(b"pbf")
     remote = RemoteInfo("Fri, 03 Jul 2026 01:40:35 GMT", 347)
     assert is_up_to_date(dest, remote) is False
+
+
+@responses.activate
+def test_download_writes_file_and_meta(tmp_path):
+    _mock_head()
+    responses.get(URL, body=BODY)
+    dest = download(URL, tmp_path, progress=False)
+    assert dest == tmp_path / "lombardia-latest.osm.pbf"
+    assert dest.read_bytes() == BODY
+    assert not (tmp_path / "lombardia-latest.osm.pbf.part").exists()
+    meta = json.loads(meta_path_for(dest).read_text())
+    assert meta["last_modified"] == "Fri, 03 Jul 2026 01:40:35 GMT"
+    assert meta["content_length"] == len(BODY)
+
+
+@responses.activate
+def test_download_skips_when_up_to_date(tmp_path):
+    _mock_head()
+    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest.write_bytes(b"old-but-current")
+    _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", len(BODY))
+    result = download(URL, tmp_path, progress=False)
+    assert result == dest
+    # nessuna GET registrata: se la facesse, responses alzerebbe ConnectionError
+    assert dest.read_bytes() == b"old-but-current"
+
+
+@responses.activate
+def test_download_force_ignores_meta(tmp_path):
+    _mock_head()
+    responses.get(URL, body=BODY)
+    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest.write_bytes(b"old")
+    _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", len(BODY))
+    result = download(URL, tmp_path, force=True, progress=False)
+    assert result.read_bytes() == BODY
+
+
+@responses.activate
+def test_download_http_error_keeps_existing_file(tmp_path):
+    _mock_head()
+    responses.get(URL, status=503)
+    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest.write_bytes(b"good")
+    with pytest.raises(requests.HTTPError):
+        download(URL, tmp_path, force=True, progress=False)
+    assert dest.read_bytes() == b"good"
