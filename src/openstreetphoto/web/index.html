@@ -85,6 +85,17 @@
   }
   #caption a { color: var(--ochre); text-decoration: none; }
   #caption a:hover, #caption a:focus-visible { text-decoration: underline; }
+  #print-description {
+    margin: -6px 2px 14px;
+    font: 400 12px/1.5 "IBM Plex Mono", monospace;
+    color: var(--ink-soft);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+  }
+  #print-description[hidden] { display: none; }
   #close {
     position: absolute; top: -12px; right: -12px;
     background: var(--ink); color: var(--paper);
@@ -106,6 +117,7 @@
       <h2 id="print-title"></h2>
       <span class="meta"><a id="source" target="_blank" rel="noopener"></a> · <a id="osm-link" target="_blank" rel="noopener">vedi su OSM →</a></span>
     </figcaption>
+    <p id="print-description" hidden></p>
   </figure>
 </div>
 
@@ -221,6 +233,7 @@
   const overlay = document.getElementById("overlay");
   const photoBox = document.getElementById("photo-box");
   const title = document.getElementById("print-title");
+  const description = document.getElementById("print-description");
   const source = document.getElementById("source");
   const osmLink = document.getElementById("osm-link");
   const closeBtn = document.getElementById("close");
@@ -264,6 +277,8 @@
     title.textContent =
       props.tags.name || typeTitle(props.tags) || photoTitle(props.tags) ||
       "Nodo " + props.osm_id;
+    description.textContent = props.tags.description || "";
+    description.hidden = !props.tags.description;
     osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
     showCandidate(candidates, 0);
     overlay.classList.add("open");
