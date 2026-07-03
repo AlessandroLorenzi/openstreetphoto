@@ -7,7 +7,9 @@ from pathlib import Path
 
 import osmium
 
-PHOTO_TAGS = ("image", "panoramax", "mapillary", "flickr", "wikimedia_commons")
+# niente mapillary: foto non embeddabile senza token API, i nodi solo-Mapillary
+# non verrebbero comunque mostrati
+PHOTO_TAGS = ("image", "panoramax", "flickr", "wikimedia_commons")
 
 
 def photo_keys(tags: dict[str, str]) -> list[str]:

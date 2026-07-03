@@ -24,11 +24,9 @@ osp-serve      # serve la mappa in locale su http://localhost:8000/
 - **`osp-extract`** — attraversa il PBF con
   [pyosmium](https://osmcode.org/pyosmium/) (filtro `KeyFilter` in C++,
   ~5 s) e produce una FeatureCollection GeoJSON dei nodi con almeno uno tra
-  `image`, `panoramax`, `mapillary`, `flickr`,
-  `wikimedia_commons=File:*`.
+  `image`, `panoramax`, `flickr`, `wikimedia_commons=File:*`.
+  Mapillary è escluso: foto non embeddabile senza token API.
 - **`osp-serve`** — server stdlib che serve la pagina Leaflet e il GeoJSON.
-  I punti solo-Mapillary non sono mostrati (foto non embeddabile senza
-  token API).
 
 ## Deploy
 

@@ -5,8 +5,14 @@ from openstreetphoto.extract import extract_features, main, photo_keys
 
 
 def test_photo_keys_matches_each_photo_tag():
-    for key in ("image", "panoramax", "mapillary", "flickr"):
+    for key in ("image", "panoramax", "flickr"):
         assert photo_keys({key: "qualcosa"}) == [key]
+
+
+def test_photo_keys_ignores_mapillary():
+    # foto non embeddabile senza token API: i nodi solo-Mapillary non servono
+    assert photo_keys({"mapillary": "abc123"}) == []
+    assert photo_keys({"mapillary": "abc123", "image": "http://x/1.jpg"}) == ["image"]
 
 
 def test_photo_keys_wikimedia_commons_file_only():
