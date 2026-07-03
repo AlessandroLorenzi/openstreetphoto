@@ -251,7 +251,8 @@
     const candidates = photoCandidates(props);
     if (!candidates.length) return;
     currentNodeId = props.osm_id;
-    title.textContent = props.tags.name || "Nodo " + props.osm_id;
+    title.textContent =
+      props.tags.name || photoTitle(props.tags) || "Nodo " + props.osm_id;
     osmLink.href = "https://www.openstreetmap.org/node/" + props.osm_id;
     showCandidate(candidates, 0);
     overlay.classList.add("open");
