@@ -146,6 +146,38 @@
     return wiki.host + "/wiki/Special:FilePath/" + wiki.name + "?width=1024";
   }
 
+  // da filename a titolo: decode, via estensione, underscore -> spazi.
+  // null se somiglia a un nome generato da fotocamera/app (meglio "Nodo ..."
+  // che "IMG 20230512 101530").
+  function humanTitle(fileName) {
+    let name;
+    try {
+      name = decodeURIComponent(fileName);
+      name = name.replace(/_/g, " ");
+    } catch {
+      name = fileName; // valore raw con % literale: non decodificabile, lasciato com'e'
+    }
+    name = name.replace(/\.(jpe?g|png|webp|gif|tiff?|svg)$/i, "").trim();
+    if (/^(IMG|DSC[NF]?|P\d|PXL|DJI|GOPR|Screenshot|WhatsApp Image)[ _-]?\d/i.test(name)) {
+      return null;
+    }
+    if (/^[\d\s\-.]*$/.test(name)) return null; // solo cifre/date/timestamp, o vuoto
+    return name;
+  }
+
+  // titolo di fallback per i nodi senza name, dal filename della foto
+  function photoTitle(tags) {
+    if (tags.wikimedia_commons && tags.wikimedia_commons.startsWith("File:")) {
+      const t = humanTitle(tags.wikimedia_commons.slice(5));
+      if (t) return t;
+    }
+    if (tags.image) {
+      const wiki = parseWikiImage(tags.image);
+      if (wiki) return humanTitle(wiki.name);
+    }
+    return null;
+  }
+
   // tutte le sorgenti embeddabili del nodo, in ordine di priorità
   function photoCandidates(props) {
     const tags = props.tags;
