@@ -126,13 +126,14 @@
 <script>
   "use strict";
 
-  // dataset scelto via ?data=<chiave>
+  // dataset scelto via #data=<chiave>, coerente con gli altri parametri nell'hash;
+  // writeHash lo deve preservare a ogni riscrittura
   const DATASETS = {
     lombardia: { file: "photo-nodes.geojson", view: [45.6, 9.8], zoom: 8, title: "foto della Lombardia" },
     italia: { file: "photo-nodes-italia.geojson", view: [42.5, 12.5], zoom: 6, title: "foto d'Italia" },
   };
-  const dataset =
-    DATASETS[new URLSearchParams(location.search).get("data")] || DATASETS.lombardia;
+  const DATA_KEY = new URLSearchParams(location.hash.slice(1)).get("data");
+  const dataset = DATASETS[DATA_KEY] || DATASETS.lombardia;
   document.title = "openstreetphoto — " + dataset.title;
 
   // molti tag image= non sono URL diretti di immagini: pagine File: di Commons o
@@ -276,7 +277,11 @@
 
   function writeHash(nodeId, lat, lon) {
     const pos = map.getZoom() + "/" + lat.toFixed(6) + "/" + lon.toFixed(6);
-    history.replaceState(null, "", nodeId ? "#node=" + nodeId + "&map=" + pos : "#map=" + pos);
+    const parts = [];
+    if (DATA_KEY) parts.push("data=" + encodeURIComponent(DATA_KEY));
+    if (nodeId) parts.push("node=" + nodeId);
+    parts.push("map=" + pos);
+    history.replaceState(null, "", "#" + parts.join("&"));
   }
 
   let currentNodeId = null;  // nodo della modale aperta, riportato nell'hash a ogni moveend
