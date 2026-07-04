@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           lfs: true  # Pages branch-based non serve i contenuti LFS: il sito va assemblato qui
 
@@ -31,9 +31,9 @@ jobs:
           cp src/openstreetphoto/web/index.html _site/
           cp data/photo-nodes.geojson _site/
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
