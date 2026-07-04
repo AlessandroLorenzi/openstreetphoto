@@ -36,12 +36,6 @@ def test_root_with_query_string(server_url):
     assert "text/html" in resp.headers["Content-Type"]
 
 
-def test_italy_html_route(server_url):
-    resp = requests.get(f"{server_url}/italy.html")
-    assert resp.status_code == 200
-    assert "data=italia" in resp.text
-
-
 def test_italia_geojson_route(server_url):
     resp = requests.get(f"{server_url}/photo-nodes-italia.geojson")
     assert resp.status_code == 200
