@@ -9,9 +9,7 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-DEFAULT_URL = (
-    "http://download.openstreetmap.fr/extracts/europe/italy/lombardia-latest.osm.pbf"
-)
+DEFAULT_URL = "http://download.openstreetmap.fr/extracts/europe/italy.osm.pbf"
 CHUNK_SIZE = 64 * 1024
 
 
@@ -99,7 +97,7 @@ def download(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Scarica un estratto OpenStreetMap (default: Lombardia)"
+        description="Scarica un estratto OpenStreetMap (default: Italia)"
     )
     parser.add_argument("--url", default=DEFAULT_URL, help="URL dell'estratto .osm.pbf")
     parser.add_argument(

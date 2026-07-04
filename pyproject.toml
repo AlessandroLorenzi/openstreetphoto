@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "openstreetphoto"
 version = "0.1.0"
-description = "Downloader dell'estratto OpenStreetMap della Lombardia"
+description = "Mappa dei nodi OpenStreetMap d'Italia che hanno una foto"
 requires-python = ">=3.11"
 dependencies = ["requests", "tqdm", "osmium"]
 
@@ -16,6 +16,7 @@ test = ["pytest", "responses"]
 osp-download = "openstreetphoto.download:main"
 osp-extract = "openstreetphoto.extract:main"
 osp-serve = "openstreetphoto.serve:main"
+update = "openstreetphoto.update:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

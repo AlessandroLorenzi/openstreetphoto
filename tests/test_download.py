@@ -14,7 +14,7 @@ from openstreetphoto.download import (
     meta_path_for,
 )
 
-URL = "http://example.org/lombardia-latest.osm.pbf"
+URL = "http://example.org/italy.osm.pbf"
 BODY = b"x" * 1000
 
 
@@ -46,7 +46,7 @@ def _write_meta(dest: Path, last_modified: str, content_length: int) -> None:
 
 
 def test_up_to_date_when_meta_matches(tmp_path):
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"pbf")
     _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", 347)
     remote = RemoteInfo("Fri, 03 Jul 2026 01:40:35 GMT", 347)
@@ -54,7 +54,7 @@ def test_up_to_date_when_meta_matches(tmp_path):
 
 
 def test_not_up_to_date_when_last_modified_differs(tmp_path):
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"pbf")
     _write_meta(dest, "Thu, 02 Jul 2026 01:40:35 GMT", 347)
     remote = RemoteInfo("Fri, 03 Jul 2026 01:40:35 GMT", 347)
@@ -62,14 +62,14 @@ def test_not_up_to_date_when_last_modified_differs(tmp_path):
 
 
 def test_not_up_to_date_when_file_missing(tmp_path):
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", 347)
     remote = RemoteInfo("Fri, 03 Jul 2026 01:40:35 GMT", 347)
     assert is_up_to_date(dest, remote) is False
 
 
 def test_not_up_to_date_when_meta_missing(tmp_path):
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"pbf")
     remote = RemoteInfo("Fri, 03 Jul 2026 01:40:35 GMT", 347)
     assert is_up_to_date(dest, remote) is False
@@ -80,9 +80,9 @@ def test_download_writes_file_and_meta(tmp_path):
     _mock_head()
     responses.get(URL, body=BODY)
     dest = download(URL, tmp_path, progress=False)
-    assert dest == tmp_path / "lombardia-latest.osm.pbf"
+    assert dest == tmp_path / "italy.osm.pbf"
     assert dest.read_bytes() == BODY
-    assert not (tmp_path / "lombardia-latest.osm.pbf.part").exists()
+    assert not (tmp_path / "italy.osm.pbf.part").exists()
     meta = json.loads(meta_path_for(dest).read_text())
     assert meta["last_modified"] == "Fri, 03 Jul 2026 01:40:35 GMT"
     assert meta["content_length"] == len(BODY)
@@ -91,7 +91,7 @@ def test_download_writes_file_and_meta(tmp_path):
 @responses.activate
 def test_download_skips_when_up_to_date(tmp_path):
     _mock_head()
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"old-but-current")
     _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", len(BODY))
     result = download(URL, tmp_path, progress=False)
@@ -104,7 +104,7 @@ def test_download_skips_when_up_to_date(tmp_path):
 def test_download_force_ignores_meta(tmp_path):
     _mock_head()
     responses.get(URL, body=BODY)
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"old")
     _write_meta(dest, "Fri, 03 Jul 2026 01:40:35 GMT", len(BODY))
     result = download(URL, tmp_path, force=True, progress=False)
@@ -115,7 +115,7 @@ def test_download_force_ignores_meta(tmp_path):
 def test_download_http_error_keeps_existing_file(tmp_path):
     _mock_head()
     responses.get(URL, status=503)
-    dest = tmp_path / "lombardia-latest.osm.pbf"
+    dest = tmp_path / "italy.osm.pbf"
     dest.write_bytes(b"good")
     with pytest.raises(requests.HTTPError):
         download(URL, tmp_path, force=True, progress=False)
@@ -125,7 +125,7 @@ def test_download_http_error_keeps_existing_file(tmp_path):
 @responses.activate
 def test_download_resumes_partial_with_206(tmp_path):
     _mock_head()
-    part = tmp_path / "lombardia-latest.osm.pbf.part"
+    part = tmp_path / "italy.osm.pbf.part"
     part.write_bytes(BODY[:400])
     responses.get(
         URL,
@@ -141,7 +141,7 @@ def test_download_resumes_partial_with_206(tmp_path):
 @responses.activate
 def test_download_restarts_when_server_ignores_range(tmp_path):
     _mock_head()
-    part = tmp_path / "lombardia-latest.osm.pbf.part"
+    part = tmp_path / "italy.osm.pbf.part"
     part.write_bytes(b"stale")
     responses.get(URL, body=BODY, status=200)
     dest = download(URL, tmp_path, progress=False)
@@ -154,7 +154,7 @@ def test_main_downloads_to_dest(tmp_path, capsys):
     responses.get(URL, body=BODY)
     rc = main(["--url", URL, "--dest", str(tmp_path)])
     assert rc == 0
-    assert (tmp_path / "lombardia-latest.osm.pbf").read_bytes() == BODY
+    assert (tmp_path / "italy.osm.pbf").read_bytes() == BODY
 
 
 @responses.activate

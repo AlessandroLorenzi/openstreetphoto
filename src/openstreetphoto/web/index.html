@@ -126,16 +126,6 @@
 <script>
   "use strict";
 
-  // dataset scelto via #data=<chiave>, coerente con gli altri parametri nell'hash;
-  // writeHash lo deve preservare a ogni riscrittura
-  const DATASETS = {
-    lombardia: { file: "photo-nodes.geojson", view: [45.6, 9.8], zoom: 8, title: "foto della Lombardia" },
-    italia: { file: "photo-nodes-italia.geojson", view: [42.5, 12.5], zoom: 6, title: "foto d'Italia" },
-  };
-  const DATA_KEY = new URLSearchParams(location.hash.slice(1)).get("data");
-  const dataset = DATASETS[DATA_KEY] || DATASETS.italia;
-  document.title = "openstreetphoto — " + dataset.title;
-
   // molti tag image= non sono URL diretti di immagini: pagine File: di Commons o
   // delle Wikipedia, valori nudi File:..., vecchi thumbnail che oggi rispondono 400.
   // parseWikiImage riconosce questi casi e ritorna host e filename (URL-encoded).
@@ -277,11 +267,7 @@
 
   function writeHash(nodeId, lat, lon) {
     const pos = map.getZoom() + "/" + lat.toFixed(6) + "/" + lon.toFixed(6);
-    const parts = [];
-    if (DATA_KEY) parts.push("data=" + encodeURIComponent(DATA_KEY));
-    if (nodeId) parts.push("node=" + nodeId);
-    parts.push("map=" + pos);
-    history.replaceState(null, "", "#" + parts.join("&"));
+    history.replaceState(null, "", nodeId ? "#node=" + nodeId + "&map=" + pos : "#map=" + pos);
   }
 
   let currentNodeId = null;  // nodo della modale aperta, riportato nell'hash a ogni moveend
@@ -320,7 +306,7 @@
   const initialHash = parseHash();
   const map = initialHash.map
     ? L.map("map").setView([initialHash.map.lat, initialHash.map.lon], initialHash.map.zoom)
-    : L.map("map").setView(dataset.view, dataset.zoom);
+    : L.map("map").setView([42.5, 12.5], 6);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -348,7 +334,7 @@
 
   const EMBEDDABLE = ["image", "wikimedia_commons", "panoramax"];
 
-  fetch(dataset.file)  // relativo: funziona sia su osp-serve sia su GitHub Pages (/repo/)
+  fetch("photo-nodes.geojson")  // relativo: funziona sia su osp-serve sia su GitHub Pages (/repo/)
     .then((r) => r.json())
     .then((doc) => {
       const feats = doc.features.filter((f) =>

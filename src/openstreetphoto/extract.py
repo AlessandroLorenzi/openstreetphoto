@@ -52,9 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Estrae in GeoJSON i nodi OSM con tag foto"
     )
-    parser.add_argument(
-        "--pbf", type=Path, default=Path("data/lombardia-latest.osm.pbf")
-    )
+    parser.add_argument("--pbf", type=Path, default=Path("data/italy.osm.pbf"))
     parser.add_argument("--out", type=Path, default=Path("data/photo-nodes.geojson"))
     args = parser.parse_args(argv)
     try:

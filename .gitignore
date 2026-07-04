@@ -3,4 +3,3 @@ __pycache__/
 *.egg-info/
 data/*
 !data/photo-nodes.geojson
-!data/photo-nodes-italia.geojson

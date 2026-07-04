@@ -14,14 +14,11 @@ def _index_html() -> bytes:
 def make_server(geojson: Path, port: int) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            path = self.path.split("?", 1)[0]  # /?data=italia deve matchare /
-            italia = geojson.with_name("photo-nodes-italia.geojson")
+            path = self.path.split("?", 1)[0]  # eventuali query non rompono il routing
             if path in ("/", "/index.html"):
                 self._send(200, "text/html; charset=utf-8", _index_html())
             elif path == "/photo-nodes.geojson":
                 self._send(200, "application/geo+json", geojson.read_bytes())
-            elif path == "/photo-nodes-italia.geojson" and italia.exists():
-                self._send(200, "application/geo+json", italia.read_bytes())
             else:
                 self._send(404, "text/plain; charset=utf-8", b"not found")
 

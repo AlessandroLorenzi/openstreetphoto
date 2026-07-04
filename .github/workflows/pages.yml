@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p _site
           cp src/openstreetphoto/web/index.html _site/
-          cp data/photo-nodes.geojson data/photo-nodes-italia.geojson _site/
+          cp data/photo-nodes.geojson _site/
 
       - uses: actions/upload-pages-artifact@v3
         with:
