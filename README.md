@@ -1,10 +1,10 @@
 # openstreetphoto
 
-Mappa dei nodi OpenStreetMap della Lombardia che hanno una foto.
+Mappa dei nodi OpenStreetMap d'Italia che hanno una foto.
 
 **🌍 Pagina pubblica: https://alessandrolorenzi.github.io/openstreetphoto/**
 
-Tutta Italia: [`#data=italia`](https://alessandrolorenzi.github.io/openstreetphoto/#data=italia).
+Solo Lombardia: [`#data=lombardia`](https://alessandrolorenzi.github.io/openstreetphoto/#data=lombardia).
 
 Cliccando su un punto si apre la foto con il link al nodo OSM; la URI
 contiene un permalink (`#node=…&map=zoom/lat/lon`) condivisibile.
