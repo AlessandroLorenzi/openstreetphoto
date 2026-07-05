@@ -233,6 +233,22 @@
     return candidates;
   }
 
+  // costruisce l'URL Nominatim: query URL-encoded, viewbox dai bounds
+  // correnti (W,S,E,N), bounded=1 per restare dentro la zona visualizzata
+  function buildSearchUrl(query, west, south, east, north) {
+    const viewbox = west + "," + south + "," + east + "," + north;
+    return "https://nominatim.openstreetmap.org/search?format=json&limit=5" +
+      "&bounded=1&q=" + encodeURIComponent(query) +
+      "&viewbox=" + encodeURIComponent(viewbox);
+  }
+
+  // Nominatim: boundingbox = [south, north, west, east] di stringhe.
+  // Ritorna [[south, west], [north, east]] per map.fitBounds.
+  function resultToBounds(result) {
+    const b = result.boundingbox;
+    return [[parseFloat(b[0]), parseFloat(b[2])], [parseFloat(b[1]), parseFloat(b[3])]];
+  }
+
   const overlay = document.getElementById("overlay");
   const photoBox = document.getElementById("photo-box");
   const title = document.getElementById("print-title");
