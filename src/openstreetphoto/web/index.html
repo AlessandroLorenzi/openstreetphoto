@@ -103,12 +103,43 @@
     font: 500 14px/1 "IBM Plex Mono", monospace;
     width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
   }
+  /* ricerca luoghi */
+  #search {
+    position: fixed; top: 12px; left: 12px; z-index: 1000;
+    width: min(320px, calc(100vw - 24px));
+  }
+  #search-input {
+    width: 100%;
+    font: 400 13px "IBM Plex Mono", monospace;
+    color: var(--ink); background: var(--paper);
+    border: 2px solid var(--ink); border-radius: 2px;
+    padding: 8px 12px;
+  }
+  #search-results {
+    list-style: none; margin-top: 4px;
+    background: var(--matte); border: 2px solid var(--ink); border-radius: 2px;
+    box-shadow: 0 4px 12px rgba(35,39,44,.3);
+  }
+  #search-results[hidden] { display: none; }
+  #search-results li {
+    padding: 8px 12px; cursor: pointer;
+    font: 400 12px/1.4 "IBM Plex Mono", monospace; color: var(--ink);
+    border-top: 1px solid #E4E1DA;
+  }
+  #search-results li:first-child { border-top: 0; }
+  #search-results li:hover, #search-results li:focus-visible { background: #EFEDE8; }
+  #search-results li.msg { color: var(--ink-soft); cursor: default; }
   :focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="counter">caricamento…</div>
+<div id="search">
+  <input id="search-input" type="text" autocomplete="off"
+         placeholder="cerca un luogo nella zona…" aria-label="Cerca un luogo">
+  <ul id="search-results" hidden></ul>
+</div>
 <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="print-title" aria-describedby="print-description">
   <figure id="print">
     <button id="close" aria-label="Chiudi">✕</button>
@@ -317,7 +348,11 @@
   }
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!searchResults.hidden) { closeSearch(); return; }  // il dropdown ha la precedenza
+    closeModal();
+  });
 
   const initialHash = parseHash();
   const map = initialHash.map
@@ -332,6 +367,64 @@
   map.on("moveend", () => {
     const c = map.getCenter();
     writeHash(currentNodeId, c.lat, c.lng);
+  });
+
+  // ---- ricerca luoghi (Nominatim, dal 3° carattere, debounce ~1s) ----
+  const searchInput = document.getElementById("search-input");
+  const searchResults = document.getElementById("search-results");
+  let searchTimer = null;
+  let searchSeq = 0;  // ignora risposte di richieste sorpassate
+
+  function showSearchMessage(text) {
+    searchResults.innerHTML = "";
+    const li = document.createElement("li");
+    li.className = "msg";
+    li.textContent = text;
+    searchResults.appendChild(li);
+    searchResults.hidden = false;
+  }
+
+  function closeSearch() {
+    searchResults.hidden = true;
+    searchResults.innerHTML = "";
+  }
+
+  function renderResults(results) {
+    searchResults.innerHTML = "";
+    if (!results.length) {
+      showSearchMessage("nessun risultato nella zona");
+      return;
+    }
+    for (const r of results) {
+      const li = document.createElement("li");
+      li.textContent = r.display_name;
+      li.addEventListener("click", () => {
+        map.fitBounds(resultToBounds(r));
+        closeSearch();
+        searchInput.blur();
+      });
+      searchResults.appendChild(li);
+    }
+    searchResults.hidden = false;
+  }
+
+  function runSearch(query) {
+    const b = map.getBounds();
+    const url = buildSearchUrl(
+      query, b.getWest(), b.getSouth(), b.getEast(), b.getNorth()
+    );
+    const seq = ++searchSeq;
+    fetch(url, { headers: { "Accept-Language": "it" } })
+      .then((r) => { if (!r.ok) throw new Error("http"); return r.json(); })
+      .then((results) => { if (seq === searchSeq) renderResults(results); })
+      .catch(() => { if (seq === searchSeq) showSearchMessage("errore nella ricerca"); });
+  }
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    const query = searchInput.value.trim();
+    if (query.length < 3) { closeSearch(); return; }
+    searchTimer = setTimeout(() => runSearch(query), 1000);
   });
 
   const clusters = L.markerClusterGroup({
