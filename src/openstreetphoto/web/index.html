@@ -362,6 +362,7 @@
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+  map.zoomControl.setPosition("bottomleft");  // libera il top-left per la barra di ricerca
 
   // ogni spostamento aggiorna map= nell'hash (e conserva node= se la modale è aperta)
   map.on("moveend", () => {
@@ -401,6 +402,7 @@
       li.addEventListener("click", () => {
         map.fitBounds(resultToBounds(r));
         closeSearch();
+        searchInput.value = "";
         searchInput.blur();
       });
       searchResults.appendChild(li);
