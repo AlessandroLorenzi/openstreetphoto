@@ -321,6 +321,8 @@
   const clusters = L.markerClusterGroup({
     showCoverageOnHover: false,
     maxClusterRadius: 46,
+    chunkedLoading: true,  // inserisce i ~35k marker a blocchi: non blocca il main thread al load
+    removeOutsideVisibleBounds: true,  // tiene nel DOM solo i marker nel viewport
     iconCreateFunction: (cluster) => {
       const n = cluster.getChildCount();
       const size = n < 10 ? 30 : n < 100 ? 38 : 46;
