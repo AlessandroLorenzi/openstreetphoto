@@ -425,7 +425,7 @@
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
     const query = searchInput.value.trim();
-    if (query.length < 3) { closeSearch(); return; }
+    if (query.length < 3) { searchSeq++; closeSearch(); return; }  // invalida richieste in volo
     searchTimer = setTimeout(() => runSearch(query), 1000);
   });
 
